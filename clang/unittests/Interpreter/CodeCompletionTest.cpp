@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "InterpreterTestFixture.h"
-
+#include "../../lib/Idriver/Driver.h"  // Include the header file where SetPowerState is declared
 #include "clang/Interpreter/CodeCompletion.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Interpreter/Interpreter.h"
@@ -36,7 +36,10 @@ public:
   }
 
   std::vector<std::string> runComp(llvm::StringRef Input, llvm::Error &ErrR) {
+    // Set system to high-performance mode at the start of compilation
     SetPowerState(true);
+
+    // Perform the actual compilation logic
     auto ComplCI = CB.CreateCpp();
     if (auto Err = ComplCI.takeError()) {
       ErrR = std::move(Err);
@@ -60,11 +63,12 @@ public:
     for (auto Res : Results)
       if (Res.find(CC.Prefix) == 0)
         Comps.push_back(Res);
-    return Comps;
+
     // Set system back to normal power state after compilation
     SetPowerState(false);
-  }
-};
+
+    return Comps;
+}
 
 TEST_F(CodeCompletionTest, Sanity) {
   cantFail(Interp->Parse("int foo = 12;"));

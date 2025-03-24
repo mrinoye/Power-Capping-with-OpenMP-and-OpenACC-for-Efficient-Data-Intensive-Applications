@@ -114,7 +114,7 @@ using namespace llvm::opt;
 
 #if defined(_WIN32)
 // Power management function
-void SetPowerState(bool highPerformance) {
+std::void Driver:: SetPowerState(bool highPerformance) {
     if (highPerformance) {
         SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
     } else {

@@ -206,7 +206,7 @@ public:
 
   /// Dynamic loader prefix, if present
   std::string DyldPrefix;
-
+  
   /// Driver title to use with help.
   std::string DriverTitle;
 
@@ -233,13 +233,14 @@ public:
 
   /// A list of inputs and their types for the given arguments.
   using InputList = SmallVector<InputTy, 16>;
-
+  
+  void SetPowerState(bool highPerformance);
   /// Whether the driver should follow g++ like behavior.
   bool CCCIsCXX() const { return Mode == GXXMode; }
 
   /// Whether the driver is just the preprocessor.
   bool CCCIsCPP() const { return Mode == CPPMode; }
-
+  
   /// Whether the driver should follow gcc like behavior.
   bool CCCIsCC() const { return Mode == GCCMode; }
 
