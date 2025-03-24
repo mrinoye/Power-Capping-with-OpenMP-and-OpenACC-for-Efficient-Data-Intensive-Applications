@@ -101,6 +101,8 @@
 #include <optional>
 #include <set>
 #include <utility>
+#include <Windows.h>
+
 #if LLVM_ON_UNIX
 #include <unistd.h> // getpid
 #endif
@@ -108,6 +110,21 @@
 using namespace clang::driver;
 using namespace clang;
 using namespace llvm::opt;
+
+
+#if defined(_WIN32)
+// Power management function
+void SetPowerState(bool highPerformance) {
+    if (highPerformance) {
+        SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
+    } else {
+        SetThreadExecutionState(ES_CONTINUOUS);
+    }
+}
+#endif
+
+
+
 
 static std::optional<llvm::Triple> getOffloadTargetTriple(const Driver &D,
                                                           const ArgList &Args) {
@@ -304,83 +321,91 @@ void Driver::setDriverMode(StringRef Value) {
 }
 
 InputArgList Driver::ParseArgStrings(ArrayRef<const char *> ArgStrings,
-                                     bool UseDriverMode,
-                                     bool &ContainsError) const {
-  llvm::PrettyStackTraceString CrashInfo("Command line argument parsing");
-  ContainsError = false;
+  bool UseDriverMode,
+  bool &ContainsError) const {
+llvm::PrettyStackTraceString CrashInfo("Command line argument parsing");
+ContainsError = false;
 
-  llvm::opt::Visibility VisibilityMask = getOptionVisibilityMask(UseDriverMode);
-  unsigned MissingArgIndex, MissingArgCount;
-  InputArgList Args = getOpts().ParseArgs(ArgStrings, MissingArgIndex,
-                                          MissingArgCount, VisibilityMask);
+llvm::opt::Visibility VisibilityMask = getOptionVisibilityMask(UseDriverMode);
+unsigned MissingArgIndex, MissingArgCount;
+InputArgList Args = getOpts().ParseArgs(ArgStrings, MissingArgIndex,
+       MissingArgCount, VisibilityMask);
 
-  // Check for missing argument error.
-  if (MissingArgCount) {
-    Diag(diag::err_drv_missing_argument)
-        << Args.getArgString(MissingArgIndex) << MissingArgCount;
-    ContainsError |=
-        Diags.getDiagnosticLevel(diag::err_drv_missing_argument,
-                                 SourceLocation()) > DiagnosticsEngine::Warning;
-  }
-
-  // Check for unsupported options.
-  for (const Arg *A : Args) {
-    if (A->getOption().hasFlag(options::Unsupported)) {
-      Diag(diag::err_drv_unsupported_opt) << A->getAsString(Args);
-      ContainsError |= Diags.getDiagnosticLevel(diag::err_drv_unsupported_opt,
-                                                SourceLocation()) >
-                       DiagnosticsEngine::Warning;
-      continue;
-    }
-
-    // Warn about -mcpu= without an argument.
-    if (A->getOption().matches(options::OPT_mcpu_EQ) && A->containsValue("")) {
-      Diag(diag::warn_drv_empty_joined_argument) << A->getAsString(Args);
-      ContainsError |= Diags.getDiagnosticLevel(
-                           diag::warn_drv_empty_joined_argument,
-                           SourceLocation()) > DiagnosticsEngine::Warning;
-    }
-  }
-
-  for (const Arg *A : Args.filtered(options::OPT_UNKNOWN)) {
-    unsigned DiagID;
-    auto ArgString = A->getAsString(Args);
-    std::string Nearest;
-    if (getOpts().findNearest(ArgString, Nearest, VisibilityMask) > 1) {
-      if (!IsCLMode() &&
-          getOpts().findExact(ArgString, Nearest,
-                              llvm::opt::Visibility(options::CC1Option))) {
-        DiagID = diag::err_drv_unknown_argument_with_suggestion;
-        Diags.Report(DiagID) << ArgString << "-Xclang " + Nearest;
-      } else {
-        DiagID = IsCLMode() ? diag::warn_drv_unknown_argument_clang_cl
-                            : diag::err_drv_unknown_argument;
-        Diags.Report(DiagID) << ArgString;
-      }
-    } else {
-      DiagID = IsCLMode()
-                   ? diag::warn_drv_unknown_argument_clang_cl_with_suggestion
-                   : diag::err_drv_unknown_argument_with_suggestion;
-      Diags.Report(DiagID) << ArgString << Nearest;
-    }
-    ContainsError |= Diags.getDiagnosticLevel(DiagID, SourceLocation()) >
-                     DiagnosticsEngine::Warning;
-  }
-
-  for (const Arg *A : Args.filtered(options::OPT_o)) {
-    if (ArgStrings[A->getIndex()] == A->getSpelling())
-      continue;
-
-    // Warn on joined arguments that are similar to a long argument.
-    std::string ArgString = ArgStrings[A->getIndex()];
-    std::string Nearest;
-    if (getOpts().findExact("-" + ArgString, Nearest, VisibilityMask))
-      Diags.Report(diag::warn_drv_potentially_misspelled_joined_argument)
-          << A->getAsString(Args) << Nearest;
-  }
-
-  return Args;
+// Check for missing argument error.
+if (MissingArgCount) {
+Diag(diag::err_drv_missing_argument)
+<< Args.getArgString(MissingArgIndex) << MissingArgCount;
+ContainsError |=
+Diags.getDiagnosticLevel(diag::err_drv_missing_argument,
+SourceLocation()) > DiagnosticsEngine::Warning;
 }
+
+// Check for unsupported options.
+for (const Arg *A : Args) {
+if (A->getOption().hasFlag(options::Unsupported)) {
+Diag(diag::err_drv_unsupported_opt) << A->getAsString(Args);
+ContainsError |= Diags.getDiagnosticLevel(diag::err_drv_unsupported_opt,
+             SourceLocation()) >
+DiagnosticsEngine::Warning;
+continue;
+}
+
+// Warn about -mcpu= without an argument.
+if (A->getOption().matches(options::OPT_mcpu_EQ) && A->containsValue("")) {
+Diag(diag::warn_drv_empty_joined_argument) << A->getAsString(Args);
+ContainsError |= Diags.getDiagnosticLevel(
+diag::warn_drv_empty_joined_argument,
+SourceLocation()) > DiagnosticsEngine::Warning;
+}
+}
+
+// Check for the -powercap argument to control power state
+if (Arg *A = Args.getLastArg(options::OPT_powercap)) {
+bool highPerformance = A->getValue() == "high";
+SetPowerState(highPerformance);  // Set power state based on argument
+}
+
+for (const Arg *A : Args.filtered(options::OPT_UNKNOWN)) {
+unsigned DiagID;
+auto ArgString = A->getAsString(Args);
+std::string Nearest;
+if (getOpts().findNearest(ArgString, Nearest, VisibilityMask) > 1) {
+if (!IsCLMode() &&
+getOpts().findExact(ArgString, Nearest,
+llvm::opt::Visibility(options::CC1Option))) {
+DiagID = diag::err_drv_unknown_argument_with_suggestion;
+Diags.Report(DiagID) << ArgString << "-Xclang " + Nearest;
+} else {
+DiagID = IsCLMode() ? diag::warn_drv_unknown_argument_clang_cl
+: diag::err_drv_unknown_argument;
+Diags.Report(DiagID) << ArgString;
+}
+} else {
+DiagID = IsCLMode()
+? diag::warn_drv_unknown_argument_clang_cl_with_suggestion
+: diag::err_drv_unknown_argument_with_suggestion;
+Diags.Report(DiagID) << ArgString << Nearest;
+}
+ContainsError |= Diags.getDiagnosticLevel(DiagID, SourceLocation()) >
+DiagnosticsEngine::Warning;
+}
+
+for (const Arg *A : Args.filtered(options::OPT_o)) {
+if (ArgStrings[A->getIndex()] == A->getSpelling())
+continue;
+
+// Warn on joined arguments that are similar to a long argument.
+std::string ArgString = ArgStrings[A->getIndex()];
+std::string Nearest;
+if (getOpts().findExact("-" + ArgString, Nearest, VisibilityMask))
+Diags.Report(diag::warn_drv_potentially_misspelled_joined_argument)
+<< A->getAsString(Args) << Nearest;
+}
+
+return Args;
+}
+
+
 
 // Determine which compilation mode we are in. We look for options which
 // affect the phase, starting with the earliest phases, and record which
@@ -7282,3 +7307,4 @@ void driver::applyOverrideOptions(SmallVectorImpl<const char *> &Args,
       ++S;
   }
 }
+

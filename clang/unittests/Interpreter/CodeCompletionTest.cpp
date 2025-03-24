@@ -36,6 +36,7 @@ public:
   }
 
   std::vector<std::string> runComp(llvm::StringRef Input, llvm::Error &ErrR) {
+    SetPowerState(true);
     auto ComplCI = CB.CreateCpp();
     if (auto Err = ComplCI.takeError()) {
       ErrR = std::move(Err);
@@ -60,6 +61,8 @@ public:
       if (Res.find(CC.Prefix) == 0)
         Comps.push_back(Res);
     return Comps;
+    // Set system back to normal power state after compilation
+    SetPowerState(false);
   }
 };
 
