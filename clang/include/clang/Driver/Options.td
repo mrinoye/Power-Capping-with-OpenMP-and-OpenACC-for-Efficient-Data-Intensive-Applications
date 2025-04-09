@@ -6657,8 +6657,14 @@ def fbinutils_version_EQ : Joined<["-"], "fbinutils-version=">,
   "binutils version and newer. If -fno-integrated-as is specified, the "
   "generated assembly will consider GNU as support. 'none' means that all ELF "
   "features can be used, regardless of binutils support. Defaults to 2.26.">;
+  
 def fuse_ld_EQ : Joined<["-"], "fuse-ld=">, Group<f_Group>,
   Flags<[LinkOption]>, Visibility<[ClangOption, FlangOption, CLOption]>;
+
+def powercap : Joined<["-"], "powercap=">, Flags<[DriverOption]>,
+  HelpText<"Set power state: high or medium">,
+  MetaVarName<"<level>">;
+
 def ld_path_EQ : Joined<["--"], "ld-path=">, Group<Link_Group>;
 def fuse_lipo_EQ : Joined<["-"], "fuse-lipo=">, Group<f_clang_Group>, Flags<[LinkOption]>;
 
