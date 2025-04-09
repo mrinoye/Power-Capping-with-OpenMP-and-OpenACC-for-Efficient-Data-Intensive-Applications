@@ -17,8 +17,6 @@ namespace driver {
 
 namespace options {
 
-const llvm::opt::OptSpecifier OPT_powercap = llvm::opt::Option("powercap", llvm::opt::Flag);  // Define powercap flag
-
 /// Flags specifically for clang options.  Must not overlap with
 /// llvm::opt::DriverFlag.
 enum ClangFlags {
