@@ -1,1 +1,7 @@
 clang -powercap high -o output input.c
+
+declare type
+
+SmallInt a=6;
+SmallFloat a=6.0;
+
