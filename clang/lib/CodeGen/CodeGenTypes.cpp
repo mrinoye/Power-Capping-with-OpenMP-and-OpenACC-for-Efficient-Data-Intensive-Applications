@@ -125,7 +125,9 @@ llvm::Type *CodeGenTypes::ConvertTypeForMem(QualType T) {
     uint64_t BytePadded = std::max<uint64_t>(FixedVT->getNumElements(), 8);
     return llvm::IntegerType::get(FixedVT->getContext(), BytePadded);
   }
-
+  if (QualType == SmallInt) return llvm::Type::getInt8Ty(Context);
+if (QualType == SmallFloat) return llvm::Type::getHalfTy(Context); // or your custom type
+s
   // If T is _Bool or a _BitInt type, ConvertType will produce an IR type
   // with the exact semantic bit-width of the AST type; for example,
   // _BitInt(17) will turn into i17. In memory, however, we need to store
@@ -406,6 +408,7 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
     case BuiltinType::ObjCId:
     case BuiltinType::ObjCClass:
     case BuiltinType::ObjCSel:
+    
       // LLVM void type can only be used as the result of a function call.  Just
       // map to the same as char.
       ResultType = llvm::Type::getInt8Ty(getLLVMContext());

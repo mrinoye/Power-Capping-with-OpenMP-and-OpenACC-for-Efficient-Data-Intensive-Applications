@@ -3039,6 +3039,9 @@ template <> inline const Class##Type *Type::castAs() const { \
 class BuiltinType : public Type {
 public:
   enum Kind {
+
+    SmallInt,
+    SmallFloat, 
 // OpenCL image types
 #define IMAGE_TYPE(ImgType, Id, SingletonId, Access, Suffix) Id,
 #include "clang/Basic/OpenCLImageTypes.def"

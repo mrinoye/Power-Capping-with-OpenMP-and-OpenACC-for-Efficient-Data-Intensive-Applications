@@ -12735,6 +12735,15 @@ QualType Sema::CheckCompareOperands(ExprResult &LHS, ExprResult &RHS,
   return InvalidOperands(Loc, LHS, RHS);
 }
 
+QualType Sema::getSmallIntType() {
+  return Context.getIntTypeForBitwidth(8, /*Signed=*/true);
+}
+
+QualType Sema::getSmallFloatType() {
+  return Context.HalfTy; // or define a new float16/bfloat16
+}
+
+
 QualType Sema::GetSignedVectorType(QualType V) {
   const VectorType *VTy = V->castAs<VectorType>();
   unsigned TypeSize = Context.getTypeSize(VTy->getElementType());

@@ -400,6 +400,8 @@ class ASTContext : public RefCountedBase<ASTContext> {
   QualType ObjCIdRedefinitionType;
   QualType ObjCClassRedefinitionType;
   QualType ObjCSelRedefinitionType;
+  QualType SmallIntTy;
+  QualType SmallFloatTy;
 
   /// The identifier 'bool'.
   mutable IdentifierInfo *BoolName = nullptr;

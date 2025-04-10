@@ -132,6 +132,12 @@ SIGNED_TYPE(Accum, AccumTy)
 // 'long _Accum'
 SIGNED_TYPE(LongAccum, LongAccumTy)
 
+BUILTIN_TYPE(SmallInt, SmallInt)
+BUILTIN_TYPE(SmallFloat, SmallFloat)
+
+
+
+
 // 'unsigned short _Accum'
 UNSIGNED_TYPE(UShortAccum, UnsignedShortAccumTy)
 

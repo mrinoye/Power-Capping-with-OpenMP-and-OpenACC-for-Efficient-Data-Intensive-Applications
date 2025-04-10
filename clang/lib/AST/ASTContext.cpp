@@ -1249,6 +1249,7 @@ void ASTContext::InitBuiltinType(CanQualType &R, BuiltinType::Kind K) {
   auto *Ty = new (*this, alignof(BuiltinType)) BuiltinType(K);
   R = CanQualType::CreateUnsafe(QualType(Ty, 0));
   Types.push_back(Ty);
+
 }
 
 void ASTContext::InitBuiltinTypes(const TargetInfo &Target,
@@ -1262,6 +1263,8 @@ void ASTContext::InitBuiltinTypes(const TargetInfo &Target,
 
   ABI.reset(createCXXABI(Target));
   AddrSpaceMapMangling = isAddrSpaceMapManglingEnabled(Target, LangOpts);
+  InitBuiltinType(SmallIntTy,           BuiltinType::SmallInt);
+  InitBuiltinType(SmallFloatTy,         BuiltinType::SmallFloat);
 
   // C99 6.2.5p19.
   InitBuiltinType(VoidTy,              BuiltinType::Void);
